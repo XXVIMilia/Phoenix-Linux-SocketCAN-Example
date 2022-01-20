@@ -16,8 +16,19 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package (Threads REQUIRED)
 find_package(SDL2 REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
+
+
+# Setup CMake to use GTK+, tell the compiler where to look for headers
+# and to the linker where to look for libraries
+
+link_directories(example ${GTKMM_LIBRARY_DIRS})
+include_directories(example ${GTKMM_INCLUDE_DIRS})
+
 # The following folder will be included
 include_directories("${PROJECT_SOURCE_DIR}/include")
+add_library(sguiApp SHARED "${PROJECT_SOURCE_DIR}/include/swerveGUI/sgui.cpp")
 
 add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp)
 if (${CMAKE_LIBRARY_ARCHITECTURE} STREQUAL "arm-linux-gnueabihf") # Jetson TK1 / Pi
@@ -45,4 +56,7 @@ endif()
 
 target_link_libraries(example Threads::Threads)
 target_link_libraries(example ${SDL2_LIBRARIES})
+target_link_libraries(example ${GTKMM_LIBRARIES})
+target_link_libraries(example sguiApp)
+
 

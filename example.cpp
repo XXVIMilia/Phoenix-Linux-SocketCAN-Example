@@ -9,6 +9,11 @@
 #include <thread>
 #include <SDL2/SDL.h>
 #include <unistd.h>
+#include <gtkmm/application.h>
+#include "swerveGUI/sgui.h"
+#include <sigc++/sigc++.h>
+#include <glibmm.h>
+
 
 using namespace ctre::phoenix;
 using namespace ctre::phoenix::platform;
@@ -16,13 +21,27 @@ using namespace ctre::phoenix::motorcontrol;
 using namespace ctre::phoenix::motorcontrol::can;
 
 /* make some talons for drive train */
-TalonSRX talLeft(1);
-TalonSRX talRght(0);
+//TalonSRX talLeft(1);
+//TalonSRX talRght(0);
+
+
+//Joystick Variables
+SDL_Joystick *joy;
+const char *name;
+int num_axes;
+int num_buttons;
+int num_hats;
+int *joyVals;
+
+
+
+
 
 void initDrive()
 {
 	/* both talons should blink green when driving forward */
-	talRght.SetInverted(true);
+	//talRght.SetInverted(true);
+	//talon uses can
 }
 
 void drive(double fwd, double turn)
@@ -30,40 +49,75 @@ void drive(double fwd, double turn)
 	double left = fwd - turn;
 	double rght = fwd + turn; /* positive turn means turn robot LEFT */
 
-	talLeft.Set(ControlMode::PercentOutput, left);
-	talRght.Set(ControlMode::PercentOutput, rght);
+	//talLeft.Set(ControlMode::PercentOutput, left);
+	//talRght.Set(ControlMode::PercentOutput, rght);
 }
 /** simple wrapper for code cleanup */
-void sleepApp(int ms)
-{
-	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+
+
+bool getFPS(sguiApp* myWindow){
+	std::string val = std::to_string(myWindow->updateTime());
+	myWindow->say(val);
+	return true;
 }
 
-int main() {
-	/* don't bother prompting, just use can0 */
-	//std::cout << "Please input the name of your can interface: ";
-	std::string interface;
-	//std::cin >> interface;
-	interface = "can0";
-	ctre::phoenix::platform::can::SetCANInterface(interface.c_str());
-	
-	// Comment out the call if you would rather use the automatically running diag-server, note this requires uninstalling diagnostics from Tuner. 
-	// c_SetPhoenixDiagnosticsStartTime(-1); // disable diag server, instead we will use the diag server stand alone application that Tuner installs
+bool driveController(int *joybuff,sguiApp *app){
 
-	/* setup drive */
-	initDrive();
+	// Keep reading the state of the joystick in a loop
+		// int i = 0;
+		// int y;
+		// int turn;
 
-	while (true) {
-		/* we are looking for gamepad (first time or after disconnect),
-			neutral drive until gamepad (re)connected. */
-		drive(0, 0);
+		SDL_Event event;
+		if (SDL_PollEvent(&event)) {
+				if (event.type == SDL_QUIT) { return false; }
+				if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { return false; }
+			}
+		for(int i = 0; i < num_axes;i++){
+			joybuff[i] = SDL_JoystickGetAxis(joy, i);
+		}
+		for(int i = 0; i < num_buttons; i++){
+			joybuff[i + num_axes] = SDL_JoystickGetButton(joy,i);
+		}
 
-		// wait for gamepad
-		printf("Waiting for gamepad...\n");
+		try{
+			app->updateControllerView(joybuff);
+			return true;
+		}
+		catch(...){
+			return false;
+		}
+
+		// while (i < 500) {
+		// 	/* poll for disconnects or bad things */
+			
+		// 	if (SDL_PollEvent(&event)) {
+		// 		if (event.type == SDL_QUIT) { break; }
+		// 		if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { break; }
+		// 	}
+
+		// 	/* grab some stick values */
+		// 	y = SDL_JoystickGetAxis(joy, 1);
+		// 	turn = SDL_JoystickGetAxis(joy, 2);
+		// 	printf("%d %d \n", y,turn);
+
+
+		// 	i++;
+		// }
+
+		// /* we've left the loop, likely due to gamepad disconnect */
+		// SDL_JoystickClose(joy);
+		// printf("gamepad disconnected\n");
+
+}
+
+int prepController(){
+	while(true){
 		while (true) {
 			/* SDL seems somewhat fragile, shut it down and bring it up */
 			SDL_Quit();
             SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1"); //so Ctrl-C still works
+    		SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,"1");
 			SDL_Init(SDL_INIT_JOYSTICK);
 
 			/* poll for gamepad */
@@ -72,22 +126,24 @@ int main() {
 			if (res < 0) { printf("Err = %i\n", res); }
 
 			/* yield for a bit */
-			sleepApp(20);
+			usleep(20000);
 		}
 		printf("Waiting for gamepad...Found one\n");
 
-		// Open the joystick for reading and store its handle in the joy variable
-		SDL_Joystick *joy = SDL_JoystickOpen(0);
+			// Open the joystick for reading and store its handle in the joy variable
+		joy = SDL_JoystickOpen(0);
 		if (joy == NULL) {
-			/* back to top of while loop */
-			continue;
+				/* back to top of while loop */
+				continue;
 		}
 
 		// Get information about the joystick
-		const char *name = SDL_JoystickName(joy);
-		const int num_axes = SDL_JoystickNumAxes(joy);
-		const int num_buttons = SDL_JoystickNumButtons(joy);
-		const int num_hats = SDL_JoystickNumHats(joy);
+		name = SDL_JoystickName(joy);
+		num_axes = SDL_JoystickNumAxes(joy);
+		num_buttons = SDL_JoystickNumButtons(joy);
+		num_hats = SDL_JoystickNumHats(joy);
+
+		
 		printf("Now reading from joystick '%s' with:\n"
 			"%d axes\n"
 			"%d buttons\n"
@@ -97,44 +153,64 @@ int main() {
 			num_buttons,
 			num_hats);
 
-		/* I'm using a logitech F350 wireless in D mode.
-		If num axis is 6, then gamepad is in X mode, so neutral drive and wait for D mode.
-		[SAFETY] This means 'X' becomes our robot-disable button.
-		This can be removed if that's not the goal. */
-		if (num_axes >= 6) {
-			/* back to top of while loop */
-			continue;
-		}
+		
+		
+		return(num_axes + num_buttons);
 
-		// Keep reading the state of the joystick in a loop
-		while (true) {
-			/* poll for disconnects or bad things */
-			SDL_Event event;
-			if (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT) { break; }
-				if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { break; }
-			}
+	}
+	
+}
 
-			/* grab some stick values */
-			double y = ((double)SDL_JoystickGetAxis(joy, 1)) / -32767.0;
-			double turn = ((double)SDL_JoystickGetAxis(joy, 2)) / -32767.0;
-			drive(y, turn);
 
-			/* [SAFETY] only enable drive if top left shoulder button is held down */
-			if (SDL_JoystickGetButton(joy, 4)) {
-				ctre::phoenix::unmanaged::FeedEnable(100);
-			}
+int main(int argc, char *argv[]) {
+	/* don't bother prompting, just use can0 */
+	//std::cout << "Please input the name of your can interface: ";
+	std::string interface;
+	//std::cin >> interface;
+	interface = "can0";
+	//ctre::phoenix::platform::can::SetCANInterface(interface.c_str()); Uncomment later
+	
+	// Comment out the call if you would rather use the automatically running diag-server, note this requires uninstalling diagnostics from Tuner. 
+	// c_SetPhoenixDiagnosticsStartTime(-1); // disable diag server, instead we will use the diag server stand alone application that Tuner installs
 
-			/* loop yield for a bit */
-			sleepApp(20);
-		}
+	/* setup drive */
+	//initDrive(); Uncomment later
 
-		/* we've left the loop, likely due to gamepad disconnect */
+	
+
+	while (false) { // Switch to true later
+		/* we are looking for gamepad (first time or after disconnect),
+			neutral drive until gamepad (re)connected. */
 		drive(0, 0);
-		SDL_JoystickClose(joy);
-		printf("gamepad disconnected\n");
+
+		// wait for gamepad
+		printf("Waiting for gamepad...\n");
+		
 	}
 
-	SDL_Quit();
+	//SDL_Quit();
+
+
+	auto app =
+    Gtk::Application::create(argc, argv,
+      "org.gtkmm.examples.base");
+
+	//sgui App
+	sguiApp sgui;
+	int num = prepController();
+	sgui.setUpControllerView(num);
+	std::cout<<"I am gonna run\n";
+	joyVals = new int[num];
+
+
+	//used to create a reoccurring signal
+	sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
+  	Glib::signal_timeout().connect(my_slot,20); 
+
+
+	app->run(sgui);
+	SDL_JoystickClose(joy);
+	delete joyVals;
+
 	return 0;
 }
