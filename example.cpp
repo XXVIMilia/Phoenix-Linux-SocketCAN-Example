@@ -13,6 +13,9 @@
 #include "swerveGUI/sgui.h"
 #include <sigc++/sigc++.h>
 #include <glibmm.h>
+#include "ctre/phoenix/music/Orchestra.h"
+#include "ctre/phoenix/ErrorCode.h"
+
 
 
 using namespace ctre::phoenix;
@@ -20,9 +23,13 @@ using namespace ctre::phoenix::platform;
 using namespace ctre::phoenix::motorcontrol;
 using namespace ctre::phoenix::motorcontrol::can;
 
+
+
+
 /* make some talons for drive train */
 //TalonSRX talLeft(1);
-//TalonSRX talRght(0);
+TalonFX talRight(0);
+TalonFX tal(3);
 
 
 //Joystick Variables
@@ -40,17 +47,17 @@ int *joyVals;
 void initDrive()
 {
 	/* both talons should blink green when driving forward */
-	//talRght.SetInverted(true);
+	talRight.SetInverted(true);
 	//talon uses can
 }
 
 void drive(double fwd, double turn)
 {
 	double left = fwd - turn;
-	double rght = fwd + turn; /* positive turn means turn robot LEFT */
+	double right = fwd + turn; /* positive turn means turn robot LEFT */
 
 	//talLeft.Set(ControlMode::PercentOutput, left);
-	//talRght.Set(ControlMode::PercentOutput, rght);
+	//talright.Set(ControlMode::PercentOutput, right);
 }
 /** simple wrapper for code cleanup */
 
@@ -62,12 +69,6 @@ bool getFPS(sguiApp* myWindow){
 }
 
 bool driveController(int *joybuff,sguiApp *app){
-
-	// Keep reading the state of the joystick in a loop
-		// int i = 0;
-		// int y;
-		// int turn;
-
 		SDL_Event event;
 		if (SDL_PollEvent(&event)) {
 				if (event.type == SDL_QUIT) { return false; }
@@ -87,28 +88,6 @@ bool driveController(int *joybuff,sguiApp *app){
 		catch(...){
 			return false;
 		}
-
-		// while (i < 500) {
-		// 	/* poll for disconnects or bad things */
-			
-		// 	if (SDL_PollEvent(&event)) {
-		// 		if (event.type == SDL_QUIT) { break; }
-		// 		if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { break; }
-		// 	}
-
-		// 	/* grab some stick values */
-		// 	y = SDL_JoystickGetAxis(joy, 1);
-		// 	turn = SDL_JoystickGetAxis(joy, 2);
-		// 	printf("%d %d \n", y,turn);
-
-
-		// 	i++;
-		// }
-
-		// /* we've left the loop, likely due to gamepad disconnect */
-		// SDL_JoystickClose(joy);
-		// printf("gamepad disconnected\n");
-
 }
 
 int prepController(){
@@ -129,7 +108,6 @@ int prepController(){
 			usleep(20000);
 		}
 		printf("Waiting for gamepad...Found one\n");
-
 			// Open the joystick for reading and store its handle in the joy variable
 		joy = SDL_JoystickOpen(0);
 		if (joy == NULL) {
@@ -168,13 +146,19 @@ int main(int argc, char *argv[]) {
 	std::string interface;
 	//std::cin >> interface;
 	interface = "can0";
-	//ctre::phoenix::platform::can::SetCANInterface(interface.c_str()); Uncomment later
+	ctre::phoenix::platform::can::SetCANInterface(interface.c_str());// Uncomment later
 	
 	// Comment out the call if you would rather use the automatically running diag-server, note this requires uninstalling diagnostics from Tuner. 
 	// c_SetPhoenixDiagnosticsStartTime(-1); // disable diag server, instead we will use the diag server stand alone application that Tuner installs
 
 	/* setup drive */
-	//initDrive(); Uncomment later
+	initDrive(); //Uncomment later
+	ctre::phoenix::music::Orchestra myOrc;
+	myOrc.AddInstrument(talRight);
+	std::string filePath = "Something";
+	myOrc.LoadMusic(filePath);
+	myOrc.Play();
+
 
 	
 
@@ -199,14 +183,20 @@ int main(int argc, char *argv[]) {
 	sguiApp sgui;
 	int num = prepController();
 	sgui.setUpControllerView(num);
+	char tmp[256];
+    getcwd(tmp, 256);
+	std::cout<< "Current Directory: " << tmp << "\n";
+	sgui.loadConfigs(tmp);
 	std::cout<<"I am gonna run\n";
 	joyVals = new int[num];
 
 
 	//used to create a reoccurring signal
 	sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
-  	Glib::signal_timeout().connect(my_slot,20); 
+  	sigc::connection updater = Glib::signal_timeout().connect(my_slot,20);
 
+	sgui.joystickSlot = my_slot;
+	sgui.joystickHandler = updater;
 
 	app->run(sgui);
 	SDL_JoystickClose(joy);

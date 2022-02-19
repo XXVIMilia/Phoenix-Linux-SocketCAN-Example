@@ -1,9 +1,11 @@
 #include "sgui.h"
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <sys/time.h>
 
 sguiApp::sguiApp()
-: b1("Hello World"),b2("Wazzap earth"), b3("salutations planet")   // creates a new button with label "Hello World".
+: b1("Pause Updator"),b2("Resume Updator"), b3("salutations planet")   // creates a new button with label "Hello World".
 {
   gettimeofday(&pastTime, NULL);//Initial timestamp
   // Sets the border width of the window.
@@ -45,13 +47,36 @@ sguiApp::sguiApp()
 
 
 
-
-
-
   // The final step is to display this newly created widget...
   show_all_children();
 
 }
+
+void sguiApp::loadConfigs(std::string directory){
+  std::string line;
+
+  //Load Controller Button Names
+  std::ifstream controllerConfig;
+  controllerConfig.open( directory + "/configs/controller_map.txt");
+  if (controllerConfig.is_open())
+  {
+    int i = 0;
+    type_children children = refListStore->children();
+    type_children::iterator iter = children.begin();
+    while(std::getline(controllerConfig,line)){
+      Gtk::TreeModel::Row row = *iter;
+      row[m_Columns.m_col_text] = line;
+      iter++;
+    }
+    controllerConfig.close();
+  }
+  else{
+    std::cout << "Unable to open file, default values loaded";
+  }
+
+  } 
+  
+
 
 int sguiApp::updateTime(){
   timeval tempVal;
@@ -69,7 +94,9 @@ void sguiApp::setUpControllerView(int rows){
     row[m_Columns.m_col_number] = 0;
   }
 
-  controllerView.append_column("Input", m_Columns.m_col_text);
+  controllerView.append_column_editable("Input", m_Columns.m_col_text);
+  Gtk::CellRendererText *cell = (Gtk::CellRendererText*)controllerView.get_column_cell_renderer(0);
+  cell->property_editable() = true;
   controllerView.append_column("Val", m_Columns.m_col_number);
 
   m_note.append_page(controller_Box, "Controller");
@@ -100,11 +127,26 @@ void sguiApp::updateControllerView(int* packet){
 
 sguiApp::~sguiApp()
 {
+  type_children children = refListStore->children();
+  for(type_children::iterator iter = children.begin(); iter != children.end(); ++iter){
+     Gtk::TreeModel::Row row = *iter;
+     std::cout<<row[m_Columns.m_col_text] << "\n";
+  }
+  controllerView.show();
+  
 }
 
 void sguiApp::on_button_clicked(std::string buttonLbl)
 {
   std::cout << buttonLbl << std::endl;
+  if(buttonLbl == "B1" && signalPaused == false){
+    joystickHandler.disconnect();
+    signalPaused = true;
+  }
+  else if(buttonLbl == "B2" && signalPaused == true){
+    joystickHandler = Glib::signal_timeout().connect(joystickSlot,20);
+    signalPaused = false;
+  }
 }
 
 void sguiApp::say(std::string input){

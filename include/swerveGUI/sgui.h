@@ -13,10 +13,14 @@ class sguiApp : public Gtk::Window
 public:
   sguiApp();
   virtual ~sguiApp();
+  void loadConfigs(std::string directory);
   void say(std::string input);
   int updateTime();
   void setUpControllerView(int rows);
   void updateControllerView(int* packet);
+  //For pausing and restarting sigc
+  sigc::slot<bool> joystickSlot;
+  sigc::connection joystickHandler;
 
   class ModelColumns : public Gtk::TreeModelColumnRecord{
     public:
@@ -47,6 +51,11 @@ protected:
   //For timing
   struct timeval pastTime;
   int delTime;
+
+  bool signalPaused;
+
+
+  
 
 };
 
