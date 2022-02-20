@@ -57,16 +57,20 @@ void sguiApp::loadConfigs(std::string directory){
 
   //Load Controller Button Names
   std::ifstream controllerConfig;
+  std::cout<<"Opening Controller\n";
   controllerConfig.open( directory + "/configs/controller_map.txt");
+  std::cout<<"We in\n";
   if (controllerConfig.is_open())
   {
     int i = 0;
     type_children children = refListStore->children();
     type_children::iterator iter = children.begin();
     while(std::getline(controllerConfig,line)){
+      std::cout<<"Current ctr Val: " << i << "\n";
       Gtk::TreeModel::Row row = *iter;
       row[m_Columns.m_col_text] = line;
       iter++;
+      i++;
     }
     controllerConfig.close();
   }

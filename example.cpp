@@ -26,18 +26,29 @@ using namespace ctre::phoenix::motorcontrol::can;
 
 
 
-/* make some talons for drive train */
+/* make some talons for drive train
+	Swerve Naming Convention:
+	[F,B][L,R][D,R]
+	[Front,Back][Left,Right][Drive,Rotate]
+	e.g. talFLD = tal Front Left Drive
+
+	Additionally:
+	Motor CAN IDs are decided clockwise with FRD == 0 and FLR == 7
+*/
 //TalonSRX talLeft(1);
-TalonFX talRight(0);
+TalonFX talBLD(4);
+
 TalonFX tal(3);
 
 
 //Joystick Variables
 SDL_Joystick *joy;
+SDL_GameController *GC;
 const char *name;
 int num_axes;
 int num_buttons;
 int num_hats;
+int num_Sensors;
 int *joyVals;
 
 
@@ -47,7 +58,7 @@ int *joyVals;
 void initDrive()
 {
 	/* both talons should blink green when driving forward */
-	talRight.SetInverted(true);
+	talBLD.SetInverted(true);
 	//talon uses can
 }
 
@@ -57,7 +68,7 @@ void drive(double fwd, double turn)
 	double right = fwd + turn; /* positive turn means turn robot LEFT */
 
 	//talLeft.Set(ControlMode::PercentOutput, left);
-	//talright.Set(ControlMode::PercentOutput, right);
+	//talBLD.Set(ControlMode::PercentOutput, right);
 }
 /** simple wrapper for code cleanup */
 
@@ -81,6 +92,10 @@ bool driveController(int *joybuff,sguiApp *app){
 			joybuff[i + num_axes] = SDL_JoystickGetButton(joy,i);
 		}
 
+		for(int i = 0; i < num_hats; i++){
+			joybuff[i + num_axes + num_hats] = (int16_t) SDL_JoystickGetHat(joy,i);
+		}
+
 		try{
 			app->updateControllerView(joybuff);
 			return true;
@@ -97,7 +112,9 @@ int prepController(){
 			SDL_Quit();
             SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1"); //so Ctrl-C still works
     		SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,"1");
+			SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
 			SDL_Init(SDL_INIT_JOYSTICK);
+			SDL_hid_init();
 
 			/* poll for gamepad */
 			int res = SDL_NumJoysticks();
@@ -110,9 +127,15 @@ int prepController(){
 		printf("Waiting for gamepad...Found one\n");
 			// Open the joystick for reading and store its handle in the joy variable
 		joy = SDL_JoystickOpen(0);
+		GC = SDL_GameControllerOpen(0);
 		if (joy == NULL) {
 				/* back to top of while loop */
 				continue;
+		}
+
+		if (GC == NULL) {
+				/* back to top of while loop */
+				std::cout<<"No Game Controller Found\n";
 		}
 
 		// Get information about the joystick
@@ -120,20 +143,38 @@ int prepController(){
 		num_axes = SDL_JoystickNumAxes(joy);
 		num_buttons = SDL_JoystickNumButtons(joy);
 		num_hats = SDL_JoystickNumHats(joy);
+	
+		
 
 		
 		printf("Now reading from joystick '%s' with:\n"
 			"%d axes\n"
 			"%d buttons\n"
-			"%d hats\n\n",
+			"%d hats\n"
+			"%d Sensors\n\n",
 			name,
 			num_axes,
 			num_buttons,
-			num_hats);
+			num_hats,
+			num_Sensors);
+
+		// Get information about the joystick
+		name = SDL_GameControllerName(GC);
+		//num_axes = SDL_GameControllerNumAxes(GC);
+		//num_buttons = SDL_GameControllerNumButtons(GC);
+		std::string map = SDL_GameControllerMapping(GC);
+		
 
 		
+		printf("Now reading from Game Controller '%s' with:\n",
+			name
+			);
+
+		std::cout<< "\n" <<map << "\n";
+
 		
-		return(num_axes + num_buttons);
+		//SDL_free();
+		return(num_axes + num_buttons + num_hats);
 
 	}
 	
@@ -154,10 +195,21 @@ int main(int argc, char *argv[]) {
 	/* setup drive */
 	initDrive(); //Uncomment later
 	ctre::phoenix::music::Orchestra myOrc;
-	myOrc.AddInstrument(talRight);
-	std::string filePath = "Something";
-	myOrc.LoadMusic(filePath);
-	myOrc.Play();
+	std::string name = "/home/pi/sguiCode/Phoenix-Linux-SocketCAN-Example/reeeee.chrp";
+	std::cout << name << "\n";
+	if(myOrc.LoadMusic(name)){
+		std::cout << "uh oh\n";
+	}
+
+	if(myOrc.AddInstrument(talBLD)){
+		std::cout << "some thing\n";
+	}
+
+	if(myOrc.Play()){
+		std::cout << "went wrong\n";
+	}
+
+	
 
 
 	
@@ -171,6 +223,8 @@ int main(int argc, char *argv[]) {
 		printf("Waiting for gamepad...\n");
 		
 	}
+		
+
 
 	//SDL_Quit();
 
@@ -186,7 +240,7 @@ int main(int argc, char *argv[]) {
 	char tmp[256];
     getcwd(tmp, 256);
 	std::cout<< "Current Directory: " << tmp << "\n";
-	sgui.loadConfigs(tmp);
+	//sgui.loadConfigs(tmp);
 	std::cout<<"I am gonna run\n";
 	joyVals = new int[num];
 
@@ -197,6 +251,7 @@ int main(int argc, char *argv[]) {
 
 	sgui.joystickSlot = my_slot;
 	sgui.joystickHandler = updater;
+
 
 	app->run(sgui);
 	SDL_JoystickClose(joy);
