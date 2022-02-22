@@ -85,15 +85,11 @@ bool driveController(int *joybuff,sguiApp *app){
 				if (event.type == SDL_QUIT) { return false; }
 				if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { return false; }
 			}
-		for(int i = 0; i < num_axes;i++){
-			joybuff[i] = SDL_JoystickGetAxis(joy, i);
+		for(int i = 1; i < num_axes-1;i++){
+			joybuff[i] = SDL_GameControllerGetAxis(GC,(SDL_GameControllerAxis)i);
 		}
-		for(int i = 0; i < num_buttons; i++){
-			joybuff[i + num_axes] = SDL_JoystickGetButton(joy,i);
-		}
-
-		for(int i = 0; i < num_hats; i++){
-			joybuff[i + num_axes + num_hats] = (int16_t) SDL_JoystickGetHat(joy,i);
+		for(int i = 1; i < num_buttons-1; i++){
+			joybuff[i + num_axes] = SDL_GameControllerGetButton(GC,(SDL_GameControllerButton)i);
 		}
 
 		try{
@@ -112,9 +108,8 @@ int prepController(){
 			SDL_Quit();
             SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1"); //so Ctrl-C still works
     		SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,"1");
-			SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
-			SDL_Init(SDL_INIT_JOYSTICK);
-			SDL_hid_init();
+			// SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
+			SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR);
 
 			/* poll for gamepad */
 			int res = SDL_NumJoysticks();
@@ -126,8 +121,14 @@ int prepController(){
 		}
 		printf("Waiting for gamepad...Found one\n");
 			// Open the joystick for reading and store its handle in the joy variable
-		joy = SDL_JoystickOpen(0);
+		
 		GC = SDL_GameControllerOpen(0);
+		joy = SDL_JoystickFromPlayerIndex(0);
+
+		if(SDL_GameControllerSetSensorEnabled(GC,SDL_SENSOR_GYRO,SDL_TRUE) < 0){
+			std::cout<<"Sensor Error!\n";
+		}
+
 		if (joy == NULL) {
 				/* back to top of while loop */
 				continue;
@@ -140,9 +141,10 @@ int prepController(){
 
 		// Get information about the joystick
 		name = SDL_JoystickName(joy);
-		num_axes = SDL_JoystickNumAxes(joy);
-		num_buttons = SDL_JoystickNumButtons(joy);
-		num_hats = SDL_JoystickNumHats(joy);
+		num_axes = 8;
+		num_buttons = 17;
+		
+		
 	
 		
 
@@ -150,13 +152,11 @@ int prepController(){
 		printf("Now reading from joystick '%s' with:\n"
 			"%d axes\n"
 			"%d buttons\n"
-			"%d hats\n"
-			"%d Sensors\n\n",
+			"%d hats\n\n",
 			name,
 			num_axes,
-			num_buttons,
-			num_hats,
-			num_Sensors);
+			num_buttons);
+
 
 		// Get information about the joystick
 		name = SDL_GameControllerName(GC);
@@ -174,7 +174,7 @@ int prepController(){
 
 		
 		//SDL_free();
-		return(num_axes + num_buttons + num_hats);
+		return(num_axes + num_buttons);
 
 	}
 	
