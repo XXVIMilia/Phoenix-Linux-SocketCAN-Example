@@ -4,6 +4,9 @@
 #include <string>
 #include <sys/time.h>
 
+
+
+
 sguiApp::sguiApp()
 : b1("Pause Updator"),b2("Resume Updator"), b3("salutations planet")   // creates a new button with label "Hello World".
 {
@@ -43,12 +46,47 @@ sguiApp::sguiApp()
   controller_Box.add(controllerView);
 
   m_note.append_page(main_Box,"Main");
-  m_note.append_page(motor_Box, "Motors");
+  
 
 
 
   // The final step is to display this newly created widget...
   show_all_children();
+
+}
+//################################################################
+//Make prep corners create tab structure!!!!
+//Add Back corners
+//Fix grid structure of each corner to have PID, Label, Sensor data, checkbox
+//Spin buttons arent changing, nor updating
+//################################################################
+void sguiApp::prepCorners(){
+  motorView.add(frontLeft.MainHolder);
+  motorView.add(frontRight.MainHolder);
+  motorView.attach_next_to(backLeft.MainHolder,frontLeft.MainHolder,Gtk::POS_BOTTOM,1,1);
+  motorView.attach_next_to(backRight.MainHolder,frontRight.MainHolder,Gtk::POS_BOTTOM,1,1);
+
+  frontLeft.PID_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+  frontLeft.PID_box.pack_start(frontLeft.P_spin);
+  frontLeft.PID_box.pack_start(frontLeft.I_spin);
+  frontLeft.PID_box.pack_start(frontLeft.D_spin);
+  frontLeft.cornerName.set_text("Front Left");
+  frontLeft.MainHolder.add(frontLeft.cornerName);
+  frontLeft.MainHolder.add(frontLeft.PID_box);
+
+  frontRight.PID_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+  frontRight.PID_box.pack_start(frontRight.P_spin);
+  frontRight.PID_box.pack_start(frontRight.I_spin);
+  frontRight.PID_box.pack_start(frontRight.D_spin);
+  frontRight.cornerName.set_text("Front Right");
+  frontRight.MainHolder.add(frontRight.cornerName);
+  frontRight.MainHolder.add(frontRight.PID_box);
+
+  motor_Box.add(motorView);
+  m_note.append_page(motor_Box, "Motors");
+
+  m_note.show_all();
+
 
 }
 
