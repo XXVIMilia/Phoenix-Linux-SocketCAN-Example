@@ -44,19 +44,33 @@ protected:
 
   //Components in motor tab
   Gtk::Grid motorView;
+
+  Gtk::Frame fl_frame, fr_frame, bl_frame, br_frame, motorView_frame;
+
+  Gtk::Box toggle_RD_box;
+  Gtk::RadioButton::Group turn_drive_toggle;
+  
+  //Testing Interface
+  Gtk::Box runTestBox;
+  Gtk::Button runTest;
+  Gtk::Label test_type, fillerText;
+  Gtk::Entry startVal, stopVal;
+
+
+
+
   struct corner{
     Gtk::Label cornerName;
 
     //Struct Containers
-    Gtk::Grid MainHolder;
-    Gtk::Box PID_box;
+    Gtk::Box MainHolder, PID_Data_Pair;
+    Gtk::Box PID_box, P_pair, I_pair, D_pair, corner_name_box;
     Gtk::Box Telemetry;
 
     //Struct Interface
     Gtk::CheckButton Enabled;
-    Gtk::SpinButton P_spin;
-    Gtk::SpinButton I_spin;
-    Gtk::SpinButton D_spin;
+    Gtk::SpinButton P_spin, I_spin, D_spin;
+    Gtk::Label P_name, I_name, D_name;
 
     //Struct Data
     Gtk::TreeView Tele;

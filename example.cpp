@@ -36,22 +36,23 @@ using namespace ctre::phoenix::motorcontrol::can;
 	Additionally:
 	Motor CAN IDs are decided clockwise with FRD == 0 and FLR == 7
 */
-TalonFX talFRD(0);
-TalonFX talFRR(1);
-TalonFX talBRD(2);
-TalonFX talBRR(3);
-TalonFX talBLD(4);
-TalonFX talBLR(5);
-TalonFX talFLD(6);
-TalonFX talFLR(7);
+// TalonFX talFRD(0);
+// TalonFX talFRR(1);
+// TalonFX talBRD(2);
+// TalonFX talBRR(3);
+// TalonFX talBLD(4);
+// TalonFX talBLR(5);
+// TalonFX talFLD(6);
+// TalonFX talFLR(7);
 
-CANCoder canFR(0);
-CANCoder canBR(1);
-CANCoder canBL(2);
-CANCoder canFL(3);
+// CANCoder canFR(0);
+// CANCoder canBR(1);
+// CANCoder canBL(2);
+// CANCoder canFL(3);
 
 
 //Joystick Variables
+bool controller_status;
 SDL_Joystick *joy;
 SDL_GameController *GC;
 const char *name;
@@ -68,7 +69,7 @@ int *joyVals;
 void initDrive()
 {
 	/* both talons should blink green when driving forward */
-	talBLD.SetInverted(true);
+	//talBLD.SetInverted(true);
 	//talon uses can
 }
 
@@ -123,8 +124,8 @@ void drive(float x, float y)
 	double dangle = linearMap(angle,angleMin,angleMax,encMin,encMax);
 
 	std::cout<< "Magnitude: " << magnitude << " enc angle: " << dangle << "\n";
-		ctre::phoenix::unmanaged::FeedEnable(1000);
-	talBLR.Set(ControlMode::Position,dangle);
+	ctre::phoenix::unmanaged::FeedEnable(1000);
+	//talBLR.Set(ControlMode::Position,dangle);
 
 
 	// talBLR.set(ControlMode::Position,)
@@ -161,8 +162,8 @@ bool driveController(int *joybuff,sguiApp *app){
 }
 
 int prepController(){
-	while(true){
-		while (true) {
+
+		
 			/* SDL seems somewhat fragile, shut it down and bring it up */
 			SDL_Quit();
             SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1"); //so Ctrl-C still works
@@ -172,15 +173,16 @@ int prepController(){
 
 			/* poll for gamepad */
 			int res = SDL_NumJoysticks();
-			if (res > 0) { break; }
-			if (res < 0) { printf("Err = %i\n", res); }
+			
+			if (res < 0) {
+				std::cout<<"Joy Error\n"; 
+				return -1; 
+			}
 
 			/* yield for a bit */
 			usleep(20000);
-		}
-		printf("Waiting for gamepad...Found one\n");
-			// Open the joystick for reading and store its handle in the joy variable
 		
+				
 		GC = SDL_GameControllerOpen(0);
 		joy = SDL_JoystickFromPlayerIndex(0);
 
@@ -188,14 +190,10 @@ int prepController(){
 			std::cout<<"Sensor Error!\n";
 		}
 
-		if (joy == NULL) {
-				/* back to top of while loop */
-				continue;
-		}
-
 		if (GC == NULL) {
 				/* back to top of while loop */
 				std::cout<<"No Game Controller Found\n";
+				return(-1);
 		}
 
 		// Get information about the joystick
@@ -251,8 +249,6 @@ int prepController(){
 		
 		//SDL_free();
 		return(num_axes + num_buttons);
-
-	}
 	
 }
 
@@ -263,14 +259,14 @@ int main(int argc, char *argv[]) {
 	std::string interface;
 	//std::cin >> interface;
 	interface = "can0";
-	ctre::phoenix::platform::can::SetCANInterface(interface.c_str());// Uncomment later
+	//ctre::phoenix::platform::can::SetCANInterface(interface.c_str());// Uncomment later
 	
 	// Comment out the call if you would rather use the automatically running diag-server, note this requires uninstalling diagnostics from Tuner. 
 	// c_SetPhoenixDiagnosticsStartTime(-1); // disable diag server, instead we will use the diag server stand alone application that Tuner installs
 
 	/* setup drive */
-	initDrive(); //Uncomment later
-	ctre::phoenix::music::Orchestra myOrc;
+	//initDrive(); //Uncomment later
+	//ctre::phoenix::music::Orchestra myOrc;
 	std::string name = "/home/pi/sguiCode/Phoenix-Linux-SocketCAN-Example/reeeee.chrp";
 	std::cout << name << "\n";
 	
@@ -295,15 +291,10 @@ int main(int argc, char *argv[]) {
 
 	
 
-	
-
-
-	
-
 	while (false) { // Switch to true later
 		/* we are looking for gamepad (first time or after disconnect),
 			neutral drive until gamepad (re)connected. */
-		drive(0, 0);
+		//drive(0, 0);
 
 		// wait for gamepad
 		printf("Waiting for gamepad...\n");
@@ -321,23 +312,40 @@ int main(int argc, char *argv[]) {
 
 	//sgui App
 	sguiApp sgui;
-	// int num = prepController();
+
+	std::cout << "Trying to set up controller\n";
+	int num = prepController();//Uses sdl to look at plugged in controller and find number of buttons
+	if(num = -1){
+		controller_status = false;
+	}
+	else{
+		controller_status = true;
+	}
+
+
+	//Tries to construct the motor view tab in the window
+	std::cout << "Setting up window\n";
 	sgui.prepCorners();
-	// sgui.setUpControllerView(num);
-	char tmp[256];
-    getcwd(tmp, 256);
-	std::cout<< "Current Directory: " << tmp << "\n";
-	//sgui.loadConfigs(tmp);
-	std::cout<<"I am gonna run\n";
-	// joyVals = new int[num];
 
+	//Only load crontroller values if theres a valid controller found
+	if(controller_status){
+		sgui.setUpControllerView(num);//Sets up controller tab in view
+		char tmp[256];
+    	getcwd(tmp, 256);
+		std::cout<< "Current Directory: " << tmp << "\n";
+		sgui.loadConfigs(tmp);
+		std::cout<<"I am gonna run\n";
+		joyVals = new int[num];
+	
+		//used to create a reoccurring signal for controller updating
+		//sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
+  		//sigc::connection updater = Glib::signal_timeout().connect(my_slot,20);
 
-	// //used to create a reoccurring signal
-	sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
-  	sigc::connection updater = Glib::signal_timeout().connect(my_slot,20);
+		//Gives information to sgui class to destroy and recreate the reoccuring signal
+		//sgui.joystickSlot = my_slot;
+		//sgui.joystickHandler = updater;
+	}
 
-	sgui.joystickSlot = my_slot;
-	sgui.joystickHandler = updater;
 
 	// talBLR.Set(ControlMode::PercentOutput, 0.1);
 	// ctre::phoenix::unmanaged::FeedEnable(1000);
@@ -360,10 +368,12 @@ int main(int argc, char *argv[]) {
 	// 	usleep(1000000);
 	// }
 //
-
+	std::cout << "Gonna run\n";
 	app->run(sgui);
 	SDL_JoystickClose(joy);
-	// delete joyVals;
+	if(controller_status){
+		delete joyVals;
+	}
 
 	
 
