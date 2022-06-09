@@ -14,10 +14,20 @@ public:
   int updateTime();
   void setUpControllerView(int rows);
   void updateControllerView(int* packet);
+  void updateMotorView(int* packet);
   void prepCorners();
+  void loadPIDVals();
+  void runMotorTest();
+  
   //For pausing and restarting sigc
   sigc::slot<bool> joystickSlot;
   sigc::connection joystickHandler;
+
+  sigc::slot<bool> motorViewSlot;
+  sigc::connection motorViewHandler;
+
+  std::string pid_config_directory;
+
 
   class ModelColumns : public Gtk::TreeModelColumnRecord{
     public:
@@ -33,7 +43,8 @@ public:
 protected:
   //Signal handlers:
   virtual void on_button_clicked(std::string buttonLbl);
-
+  void on_td_radio_clicked(std::string buttonLbl);
+  std::string current_td_radio;
   //Member widgets:
   Gtk::Notebook m_note;
   Gtk::Box motor_Box,main_Box,controller_Box,music_Box;//Box to hold each notebook tab
@@ -71,6 +82,9 @@ protected:
     Gtk::CheckButton Enabled;
     Gtk::SpinButton P_spin, I_spin, D_spin;
     Gtk::Label P_name, I_name, D_name;
+    Glib::RefPtr<Gtk::Adjustment> P_adjustmentVals;
+    Glib::RefPtr<Gtk::Adjustment> I_adjustmentVals;
+    Glib::RefPtr<Gtk::Adjustment> D_adjustmentVals;
 
     //Struct Data
     Gtk::TreeView Tele;

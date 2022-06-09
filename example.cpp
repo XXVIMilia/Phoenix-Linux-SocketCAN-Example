@@ -145,11 +145,11 @@ bool driveController(int *joybuff,sguiApp *app){
 				if (event.type == SDL_QUIT) { return false; }
 				if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { return false; }
 			}
-		for(int i = 1; i < num_axes-1;i++){
+		for(int i = 0; i < num_axes;i++){
 			joybuff[i] = SDL_GameControllerGetAxis(GC,(SDL_GameControllerAxis)i);
 		}
-		for(int i = 1; i < num_buttons-1; i++){
-			joybuff[i + num_axes-1] = SDL_GameControllerGetButton(GC,(SDL_GameControllerButton)i);
+		for(int i = 0; i < num_buttons; i++){
+			joybuff[i + num_axes] = SDL_GameControllerGetButton(GC,(SDL_GameControllerButton)i);
 		}
 
 		try{
@@ -159,6 +159,10 @@ bool driveController(int *joybuff,sguiApp *app){
 		catch(...){
 			return false;
 		}
+}
+
+bool driveMotorGuiTab(sguiApp *app){
+	return(true);
 }
 
 int prepController(){
@@ -315,7 +319,7 @@ int main(int argc, char *argv[]) {
 
 	std::cout << "Trying to set up controller\n";
 	int num = prepController();//Uses sdl to look at plugged in controller and find number of buttons
-	if(num = -1){
+	if(num == -1){
 		controller_status = false;
 	}
 	else{
@@ -327,23 +331,29 @@ int main(int argc, char *argv[]) {
 	std::cout << "Setting up window\n";
 	sgui.prepCorners();
 
+	char tmp[256];
+    getcwd(tmp, 256);
+	std::cout<< "Current Directory: " << tmp << "\n";
+	sgui.pid_config_directory = tmp;
+
+	sgui.loadPIDVals();
+
 	//Only load crontroller values if theres a valid controller found
 	if(controller_status){
 		sgui.setUpControllerView(num);//Sets up controller tab in view
-		char tmp[256];
-    	getcwd(tmp, 256);
-		std::cout<< "Current Directory: " << tmp << "\n";
+		
+		
 		sgui.loadConfigs(tmp);
 		std::cout<<"I am gonna run\n";
 		joyVals = new int[num];
 	
 		//used to create a reoccurring signal for controller updating
-		//sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
-  		//sigc::connection updater = Glib::signal_timeout().connect(my_slot,20);
+		sigc::slot<bool> my_slot = bind(sigc::ptr_fun(driveController), joyVals ,&sgui);
+  		sigc::connection updater = Glib::signal_timeout().connect(my_slot,20);
 
 		//Gives information to sgui class to destroy and recreate the reoccuring signal
-		//sgui.joystickSlot = my_slot;
-		//sgui.joystickHandler = updater;
+		sgui.joystickSlot = my_slot;
+		sgui.joystickHandler = updater;
 	}
 
 
@@ -374,7 +384,6 @@ int main(int argc, char *argv[]) {
 	if(controller_status){
 		delete joyVals;
 	}
-
 	
 
 	return 0;

@@ -55,21 +55,54 @@ sguiApp::sguiApp()
 
 }
 
+void sguiApp::runMotorTest(){
+  std::cout << "Run motor test commencing\n";
 
+  std::cout << "T/D: " << current_td_radio << "\n";
+
+  
+
+  if(frontLeft.Enabled.get_active()){
+    std::cout << "Testing Front Left\n";
+  }
+
+  if(frontRight.Enabled.get_active()){
+    std::cout << "Testing Front Right\n";
+  }
+
+  if(backLeft.Enabled.get_active()){
+    std::cout << "Testing Back Left\n";
+  }
+
+  if(backRight.Enabled.get_active()){
+    std::cout << "Testing Back Right\n";
+  }
+}
 
 //################################################################
 //Make prep corners create tab structure!!!!
-//Spin buttons arent changing, nor updating
 //Data Tree needs to be made and inserted
-//Need to create relevant signals for the buttons to control various functions
 //################################################################
 void sguiApp::prepCorners(){
   motor_Box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+
+  
 
   //Radio Button Toggle interface
   Gtk::RadioButton* rb1 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Turning");
   Gtk::RadioButton* rb2 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Driving");
   rb1->set_active();
+
+  rb1->signal_clicked().connect( sigc::bind(sigc::mem_fun(*this,
+              &sguiApp::on_td_radio_clicked), "Turning"));
+
+  rb2->signal_clicked().connect( sigc::bind(sigc::mem_fun(*this,
+              &sguiApp::on_td_radio_clicked), "Driving"));
+
+  current_td_radio = "Turning";
+
+  
+
   toggle_RD_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
   toggle_RD_box.add(*rb1);
   toggle_RD_box.add(*rb2);
@@ -81,7 +114,11 @@ void sguiApp::prepCorners(){
   test_type.set_label("Angle Test: ");
   fillerText.set_label(" to ");
   runTestBox.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+
+  runTest.signal_clicked().connect(sigc::mem_fun(*this, &sguiApp::runMotorTest));
   runTestBox.add(runTest);
+  
+  
   runTestBox.add(test_type);
   runTestBox.add(startVal);
   runTestBox.add(fillerText);
@@ -121,6 +158,23 @@ void sguiApp::prepCorners(){
   frontLeft.I_name.set_label("I: ");
   frontLeft.D_name.set_label("D: ");
 
+  frontLeft.P_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);//Use for spin button config
+  frontLeft.I_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+  frontLeft.D_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+
+  frontLeft.P_spin.set_wrap();
+  frontLeft.I_spin.set_wrap();
+  frontLeft.D_spin.set_wrap();
+
+  frontLeft.P_spin.set_digits(5);
+  frontLeft.I_spin.set_digits(5);
+  frontLeft.D_spin.set_digits(5);
+
+  frontLeft.P_spin.set_adjustment(frontLeft.P_adjustmentVals);
+  frontLeft.I_spin.set_adjustment(frontLeft.I_adjustmentVals);
+  frontLeft.D_spin.set_adjustment(frontLeft.D_adjustmentVals);
+
+
   frontLeft.P_pair.pack_start(frontLeft.P_name);
   frontLeft.P_pair.pack_start(frontLeft.P_spin);
 
@@ -129,8 +183,6 @@ void sguiApp::prepCorners(){
 
   frontLeft.D_pair.pack_start(frontLeft.D_name);
   frontLeft.D_pair.pack_start(frontLeft.D_spin);
-
-
 
   frontLeft.PID_box.pack_start(frontLeft.P_pair);
   frontLeft.PID_box.pack_start(frontLeft.I_pair);
@@ -159,6 +211,23 @@ void sguiApp::prepCorners(){
   frontRight.P_name.set_label("P: ");
   frontRight.I_name.set_label("I: ");
   frontRight.D_name.set_label("D: ");
+
+  frontRight.P_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);//Use for spin button config
+  frontRight.I_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+  frontRight.D_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+
+  frontRight.P_spin.set_wrap();
+  frontRight.I_spin.set_wrap();
+  frontRight.D_spin.set_wrap();
+
+  frontRight.P_spin.set_digits(5);
+  frontRight.I_spin.set_digits(5);
+  frontRight.D_spin.set_digits(5);
+
+  frontRight.P_spin.set_adjustment(frontRight.P_adjustmentVals);
+  frontRight.I_spin.set_adjustment(frontRight.I_adjustmentVals);
+  frontRight.D_spin.set_adjustment(frontRight.D_adjustmentVals);
+
 
   frontRight.P_pair.pack_start(frontRight.P_name);
   frontRight.P_pair.pack_start(frontRight.P_spin);
@@ -197,6 +266,22 @@ void sguiApp::prepCorners(){
   backLeft.P_name.set_label("P: ");
   backLeft.I_name.set_label("I: ");
   backLeft.D_name.set_label("D: ");
+  
+  backLeft.P_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);//Use for spin button config
+  backLeft.I_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+  backLeft.D_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+
+  backLeft.P_spin.set_wrap();
+  backLeft.I_spin.set_wrap();
+  backLeft.D_spin.set_wrap();
+
+  backLeft.P_spin.set_digits(5);
+  backLeft.I_spin.set_digits(5);
+  backLeft.D_spin.set_digits(5);
+
+  backLeft.P_spin.set_adjustment(backLeft.P_adjustmentVals);
+  backLeft.I_spin.set_adjustment(backLeft.I_adjustmentVals);
+  backLeft.D_spin.set_adjustment(backLeft.D_adjustmentVals);
 
   backLeft.P_pair.pack_start(backLeft.P_name);
   backLeft.P_pair.pack_start(backLeft.P_spin);
@@ -235,6 +320,22 @@ void sguiApp::prepCorners(){
   backRight.P_name.set_label("P: ");
   backRight.I_name.set_label("I: ");
   backRight.D_name.set_label("D: ");
+
+  backRight.P_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);//Use for spin button config
+  backRight.I_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+  backRight.D_adjustmentVals = Gtk::Adjustment::create(0.0,0.0,1.0,0.0005,0.0005);
+
+  backRight.P_spin.set_wrap();
+  backRight.I_spin.set_wrap();
+  backRight.D_spin.set_wrap();
+
+  backRight.P_spin.set_digits(5);
+  backRight.I_spin.set_digits(5);
+  backRight.D_spin.set_digits(5);
+
+  backRight.P_spin.set_adjustment(backRight.P_adjustmentVals);
+  backRight.I_spin.set_adjustment(backRight.I_adjustmentVals);
+  backRight.D_spin.set_adjustment(backRight.D_adjustmentVals);
 
   backRight.P_pair.pack_start(backRight.P_name);
   backRight.P_pair.pack_start(backRight.P_spin);
@@ -288,7 +389,7 @@ void sguiApp::loadConfigs(std::string directory){
     type_children children = refListStore->children();
     type_children::iterator iter = children.begin();
     while(std::getline(controllerConfig,line)){
-      std::cout<<"Current ctr Val: " << i << "\n";
+      //std::cout<<"Current ctr Val: " << i << "\n";
       Gtk::TreeModel::Row row = *iter;
       row[m_Columns.m_col_text] = line;
       iter++;
@@ -350,15 +451,87 @@ void sguiApp::updateControllerView(int* packet){
 
 }
 
+void sguiApp::updateMotorView(int* packet){
+
+}
+
+void sguiApp::loadPIDVals(){
+  //write current pid to txt
+  std::ifstream pidConfig;
+  std::cout<<"Trying to read PID config\n";
+  pidConfig.open( pid_config_directory + "/configs/pid_configs.txt");
+  std::cout<<"We trying: " << pid_config_directory << "/configs/pid_configs.txt\n";
+  if (pidConfig.is_open())
+  {
+    double val;
+    std::string line;
+
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.P_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.I_spin.set_value(val);
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.D_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.P_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.I_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.D_spin.set_value(val); 
+    
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.P_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.I_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.D_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backRight.P_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backRight.I_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backRight.D_spin.set_value(val); 
+    
+    pidConfig.close();
+  }
+  else{
+    std::cout << "Unable to open file, try different directory\n";
+  }
+
+}
+
 
 sguiApp::~sguiApp()
 {
-  type_children children = refListStore->children();
-  for(type_children::iterator iter = children.begin(); iter != children.end(); ++iter){
-     Gtk::TreeModel::Row row = *iter;
-     std::cout<<row[m_Columns.m_col_text] << "\n";
+  //Print all the named buttons. Can be used to also update txt if i bother to implement that
+  // type_children children = refListStore->children();
+  // for(type_children::iterator iter = children.begin(); iter != children.end(); ++iter){
+  //    Gtk::TreeModel::Row row = *iter;
+  //    std::cout<<row[m_Columns.m_col_text] << "\n";
+  // }
+  // controllerView.show();
+
+  //write current pid to txt
+  std::ofstream pidConfig;
+  std::cout<<"Trying to write output to PID config\n";
+  pidConfig.open( pid_config_directory + "/configs/pid_configs.txt");
+  std::cout<<"We trying: " << pid_config_directory << "/configs/pid_configs.txt\n";
+  if (pidConfig.is_open())
+  {
+    double val;
+    char charray[16] = {0};
+
+
+    val = frontLeft.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = frontLeft.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = frontLeft.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = frontRight.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = frontRight.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = frontRight.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    
+    val = backLeft.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = backLeft.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = backLeft.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = backRight.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = backRight.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    val = backRight.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    
+    pidConfig.close();
   }
-  controllerView.show();
+  else{
+    std::cout << "Unable to open file, try different directory\n";
+  }
+
+
+
   
 }
 
@@ -373,6 +546,11 @@ void sguiApp::on_button_clicked(std::string buttonLbl)
     joystickHandler = Glib::signal_timeout().connect(joystickSlot,20);
     signalPaused = false;
   }
+}
+
+void sguiApp::on_td_radio_clicked(std::string buttonLbl)
+{
+  current_td_radio = buttonLbl;
 }
 
 void sguiApp::say(std::string input){
