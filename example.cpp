@@ -115,7 +115,7 @@ float getAngle(float x,float y){
 void drive(float x, float y)
 {
 	const double encMin = 0;
-	const double encMax = 4096;
+	const double encMax = 4096*12;
 	const double angleMin = 0;
 	const double angleMax = 360;
 	float magnitude = sqrt(pow(x,2.0) + pow(y,2.0));
@@ -123,12 +123,10 @@ void drive(float x, float y)
 
 	double dangle = linearMap(angle,angleMin,angleMax,encMin,encMax);
 
+
 	std::cout<< "Magnitude: " << magnitude << " enc angle: " << dangle << "\n";
 	ctre::phoenix::unmanaged::FeedEnable(1000);
-	//talBLR.Set(ControlMode::Position,dangle);
-
-
-	// talBLR.set(ControlMode::Position,)
+	talBLR.Set(ControlMode::Position,dangle);
 }
 /** simple wrapper for code cleanup */
 
@@ -258,34 +256,38 @@ int prepController(){
 
 void runPIDTest(sguiApp* myApp){
 	std::cout << "I am running a PID test\n";
-	double pidVals[12];
+	double pidVals[24];
 
 	myApp->getPIDCoefs(pidVals);
 
-	std::cout<< "Printing PIDS\n";
-	for(int i = 0; i < 12; i++){
-		std::cout<< pidVals[i] << "\n";
-	}
-
+	// std::cout<< "Printing PIDS\n";
+	// for(int i = 0; i < 12; i++){
+	// 	std::cout<< pidVals[i] << "\n";
+	// }
+	talBLR.SetSelectedSensorPosition(0);
+	usleep(20000);
+	std::cout <<talBLR.GetSelectedSensorPosition(0)  << "\n";
+	usleep(20000);
 	talBLR.Set(ControlMode::PercentOutput, 0.1);
 	ctre::phoenix::unmanaged::FeedEnable(1000);
 	usleep(2000000);
 	talBLR.Set(ControlMode::PercentOutput, 0.0);
+	usleep(20000);
+	std::cout <<talBLR.GetSelectedSensorPosition(0)  << "\n";
 
 	
 	talBLR.Config_kF(0,0.0,0);
-	talBLR.Config_kP(0,pidVals[7],0);
-	talBLR.Config_kI(0,pidVals[8],0);
-	talBLR.Config_kD(0,pidVals[9],0);
+	talBLR.Config_kP(0,pidVals[6],0);
+	talBLR.Config_kI(0,pidVals[7],0);
+	talBLR.Config_kD(0,pidVals[8],0);
 	talBLR.ConfigClosedloopRamp(0.5);
 
-	for(double deg = 0; deg < 9000; deg+=90){
-		float x = 0.15 * cos((deg * 3.1415)/180.0);
-		float y = 0.15 * sin((deg * 3.1415)/180.0);
-		std::cout << "Expected mag: 15 Expected deg: " << deg << "\n";
-		drive(x,y);
-		usleep(1000000);
-	}
+	std::cout <<talBLR.GetSelectedSensorPosition(0)  << "\n";
+	drive(1.0,1.0);
+	usleep(5000000);
+	drive(-1.0,-1.0);
+	std::cout <<talBLR.GetSelectedSensorPosition(0)  << "\n";
+
 	
 
 }

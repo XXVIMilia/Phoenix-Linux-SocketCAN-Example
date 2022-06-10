@@ -18,7 +18,7 @@ public:
   void prepCorners();
   void loadPIDVals();
   void runMotorTest();
-  void getPIDCoefs(double (&toStore)[12]);
+  void getPIDCoefs(double (&toStore)[24]);
   
   //For pausing and restarting sigc
   sigc::slot<bool> joystickSlot;
@@ -63,6 +63,8 @@ protected:
 
   Gtk::Box toggle_RD_box;
   Gtk::RadioButton::Group turn_drive_toggle;
+  Gtk::RadioButton* rb1;
+  Gtk::RadioButton* rb2;
   
   //Testing Interface
   Gtk::Box runTestBox;
@@ -94,6 +96,7 @@ protected:
     ModelColumns m_Columns;
     Glib::RefPtr<Gtk::ListStore> dataListStore;
     Gtk::TreeModel::iterator data_iter;
+    double pids[6];//Drive pid, Turn pid
   };
 
   typedef struct corner corner;

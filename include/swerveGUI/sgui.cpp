@@ -55,20 +55,23 @@ sguiApp::sguiApp()
 
 }
 
-void sguiApp::getPIDCoefs(double (&toStore)[12]){
+void sguiApp::getPIDCoefs(double (&toStore)[24]){
   std::cout<< "Getting pids\n";
-  toStore[0] = frontLeft.P_spin.get_value();
-  toStore[1] = frontLeft.I_spin.get_value();
-  toStore[2] = frontLeft.D_spin.get_value();
-  toStore[3] = frontRight.P_spin.get_value();
-  toStore[4] = frontRight.I_spin.get_value();
-  toStore[5] = frontRight.D_spin.get_value();
-  toStore[6] = backLeft.P_spin.get_value();
-  toStore[7] = backLeft.I_spin.get_value();
-  toStore[8] = backLeft.D_spin.get_value();
-  toStore[9] = backRight.P_spin.get_value();
-  toStore[10] = backRight.I_spin.get_value();
-  toStore[11] = backRight.D_spin.get_value();
+  for(int i = 0; i < 6; i++){
+    toStore[i] = frontLeft.pids[i];
+  }
+
+  for(int i = 0; i < 6; i++){
+    toStore[i + 6] = frontRight.pids[i];
+  }
+
+  for(int i = 0; i < 6; i++){
+    toStore[i + 12] = backLeft.pids[i];
+  }
+
+  for(int i = 0; i < 6; i++){
+    toStore[i + 18] = backRight.pids[i];
+  }
 }
 
 void sguiApp::runMotorTest(){
@@ -105,14 +108,15 @@ void sguiApp::prepCorners(){
   
 
   //Radio Button Toggle interface
-  Gtk::RadioButton* rb1 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Turning");
-  Gtk::RadioButton* rb2 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Driving");
+  rb1 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Turning");
+  rb2 = Gtk::make_managed<Gtk::RadioButton>(turn_drive_toggle, "Driving");
   rb1->set_active();
 
-  rb1->signal_clicked().connect( sigc::bind(sigc::mem_fun(*this,
+  
+  rb1->signal_toggled().connect( sigc::bind(sigc::mem_fun(*this,
               &sguiApp::on_td_radio_clicked), "Turning"));
 
-  rb2->signal_clicked().connect( sigc::bind(sigc::mem_fun(*this,
+  rb2->signal_toggled().connect( sigc::bind(sigc::mem_fun(*this,
               &sguiApp::on_td_radio_clicked), "Driving"));
 
   current_td_radio = "Turning";
@@ -482,19 +486,33 @@ void sguiApp::loadPIDVals(){
     double val;
     std::string line;
 
-    std::getline(pidConfig,line); val = std::stod(line); frontLeft.P_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); frontLeft.I_spin.set_value(val);
-    std::getline(pidConfig,line); val = std::stod(line); frontLeft.D_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); frontRight.P_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); frontRight.I_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); frontRight.D_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.P_spin.set_value(val); frontLeft.pids[0] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.I_spin.set_value(val); frontLeft.pids[1] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.D_spin.set_value(val); frontLeft.pids[2] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.pids[3] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.pids[4] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontLeft.pids[5] = val;
+
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.P_spin.set_value(val); frontRight.pids[0] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.I_spin.set_value(val); frontRight.pids[1] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.D_spin.set_value(val); frontRight.pids[2] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.pids[3] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.pids[4] = val;
+    std::getline(pidConfig,line); val = std::stod(line); frontRight.pids[5] = val; 
     
-    std::getline(pidConfig,line); val = std::stod(line); backLeft.P_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); backLeft.I_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); backLeft.D_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); backRight.P_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); backRight.I_spin.set_value(val); 
-    std::getline(pidConfig,line); val = std::stod(line); backRight.D_spin.set_value(val); 
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.P_spin.set_value(val); backLeft.pids[0] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.I_spin.set_value(val); backLeft.pids[1] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.D_spin.set_value(val); backLeft.pids[2] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.pids[3] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.pids[4] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backLeft.pids[5] = val;
+
+    std::getline(pidConfig,line); val = std::stod(line); backRight.P_spin.set_value(val); backRight.pids[0] = val; 
+    std::getline(pidConfig,line); val = std::stod(line); backRight.I_spin.set_value(val); backRight.pids[1] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backRight.D_spin.set_value(val); backRight.pids[2] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backRight.pids[3] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backRight.pids[4] = val;
+    std::getline(pidConfig,line); val = std::stod(line); backRight.pids[5] = val;
     
     pidConfig.close();
   }
@@ -525,21 +543,22 @@ sguiApp::~sguiApp()
     double val;
     char charray[16] = {0};
 
+    for(int i = 0; i < 6; i ++){
+      val = frontLeft.pids[i]; sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    }
 
-    val = frontLeft.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = frontLeft.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = frontLeft.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = frontRight.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = frontRight.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = frontRight.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    
-    val = backLeft.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = backLeft.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = backLeft.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = backRight.P_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = backRight.I_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    val = backRight.D_spin.get_value(); sprintf(charray,"%2.13f\n",val); pidConfig << charray;
-    
+    for(int i = 0; i < 6; i ++){
+      val = frontRight.pids[i]; sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    }
+
+    for(int i = 0; i < 6; i ++){
+      val = backLeft.pids[i]; sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    }
+
+    for(int i = 0; i < 6; i ++){
+      val = backRight.pids[i]; sprintf(charray,"%2.13f\n",val); pidConfig << charray;
+    }
+
     pidConfig.close();
   }
   else{
@@ -567,6 +586,75 @@ void sguiApp::on_button_clicked(std::string buttonLbl)
 void sguiApp::on_td_radio_clicked(std::string buttonLbl)
 {
   current_td_radio = buttonLbl;
+  if(rb1->get_active() && buttonLbl == "Driving"){
+    return;
+  }
+
+  if(rb2->get_active() && buttonLbl == "Turning"){
+    return;
+  }
+
+
+  if(buttonLbl == "Driving"){
+    std::cout << "Drive\n";
+    frontLeft.pids[3] = frontLeft.P_spin.get_value();
+    frontLeft.pids[4] = frontLeft.I_spin.get_value();
+    frontLeft.pids[5] = frontLeft.D_spin.get_value();
+    frontLeft.P_spin.set_value(frontLeft.pids[0]);
+    frontLeft.I_spin.set_value(frontLeft.pids[1]);
+    frontLeft.D_spin.set_value(frontLeft.pids[2]);
+
+    frontRight.pids[3] = frontRight.P_spin.get_value();
+    frontRight.pids[4] = frontRight.I_spin.get_value();
+    frontRight.pids[5] = frontRight.D_spin.get_value();
+    frontRight.P_spin.set_value(frontRight.pids[0]);
+    frontRight.I_spin.set_value(frontRight.pids[1]);
+    frontRight.D_spin.set_value(frontRight.pids[2]);
+
+    backLeft.pids[3] = backLeft.P_spin.get_value();
+    backLeft.pids[4] = backLeft.I_spin.get_value();
+    backLeft.pids[5] = backLeft.D_spin.get_value();
+    backLeft.P_spin.set_value(backLeft.pids[0]);
+    backLeft.I_spin.set_value(backLeft.pids[1]);
+    backLeft.D_spin.set_value(backLeft.pids[2]);
+
+    backRight.pids[3] = backRight.P_spin.get_value();
+    backRight.pids[4] = backRight.I_spin.get_value();
+    backRight.pids[5] = backRight.D_spin.get_value();
+    backRight.P_spin.set_value(backRight.pids[0]);
+    backRight.I_spin.set_value(backRight.pids[1]);
+    backRight.D_spin.set_value(backRight.pids[2]);
+  }
+  else if(buttonLbl == "Turning"){
+    std::cout << "Turn\n";
+    frontLeft.pids[0] = frontLeft.P_spin.get_value();
+    frontLeft.pids[1] = frontLeft.I_spin.get_value();
+    frontLeft.pids[2] = frontLeft.D_spin.get_value();
+    frontLeft.P_spin.set_value(frontLeft.pids[3]);
+    frontLeft.I_spin.set_value(frontLeft.pids[4]);
+    frontLeft.D_spin.set_value(frontLeft.pids[5]);
+
+    frontRight.pids[0] = frontRight.P_spin.get_value();
+    frontRight.pids[1] = frontRight.I_spin.get_value();
+    frontRight.pids[2] = frontRight.D_spin.get_value();
+    frontRight.P_spin.set_value(frontRight.pids[3]);
+    frontRight.I_spin.set_value(frontRight.pids[4]);
+    frontRight.D_spin.set_value(frontRight.pids[5]);
+
+    backLeft.pids[0] = backLeft.P_spin.get_value();
+    backLeft.pids[1] = backLeft.I_spin.get_value();
+    backLeft.pids[2] = backLeft.D_spin.get_value();
+    backLeft.P_spin.set_value(backLeft.pids[3]);
+    backLeft.I_spin.set_value(backLeft.pids[4]);
+    backLeft.D_spin.set_value(backLeft.pids[5]);
+
+    backRight.pids[0] = backRight.P_spin.get_value();
+    backRight.pids[1] = backRight.I_spin.get_value();
+    backRight.pids[2] = backRight.D_spin.get_value();
+    backRight.P_spin.set_value(backRight.pids[3]);
+    backRight.I_spin.set_value(backRight.pids[4]);
+    backRight.D_spin.set_value(backRight.pids[5]);
+  }
 }
 
 void sguiApp::say(std::string input){
