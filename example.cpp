@@ -36,19 +36,19 @@ using namespace ctre::phoenix::motorcontrol::can;
 	Additionally:
 	Motor CAN IDs are decided clockwise with FRD == 0 and FLR == 7
 */
-// TalonFX talFRD(0);
-// TalonFX talFRR(1);
-// TalonFX talBRD(2);
-// TalonFX talBRR(3);
-// TalonFX talBLD(4);
-// TalonFX talBLR(5);
-// TalonFX talFLD(6);
-// TalonFX talFLR(7);
+TalonFX talFRD(0);
+TalonFX talFRR(1);
+TalonFX talBRD(2);
+TalonFX talBRR(3);
+TalonFX talBLD(4);
+TalonFX talBLR(5);
+TalonFX talFLD(6);
+TalonFX talFLR(7);
 
-// CANCoder canFR(0);
-// CANCoder canBR(1);
-// CANCoder canBL(2);
-// CANCoder canFL(3);
+CANCoder canFR(0);
+CANCoder canBR(1);
+CANCoder canBL(2);
+CANCoder canFL(3);
 
 
 //Joystick Variables
@@ -256,6 +256,40 @@ int prepController(){
 	
 }
 
+void runPIDTest(sguiApp* myApp){
+	std::cout << "I am running a PID test\n";
+	double pidVals[12];
+
+	myApp->getPIDCoefs(pidVals);
+
+	std::cout<< "Printing PIDS\n";
+	for(int i = 0; i < 12; i++){
+		std::cout<< pidVals[i] << "\n";
+	}
+
+	talBLR.Set(ControlMode::PercentOutput, 0.1);
+	ctre::phoenix::unmanaged::FeedEnable(1000);
+	usleep(2000000);
+	talBLR.Set(ControlMode::PercentOutput, 0.0);
+
+	
+	talBLR.Config_kF(0,0.0,0);
+	talBLR.Config_kP(0,pidVals[7],0);
+	talBLR.Config_kI(0,pidVals[8],0);
+	talBLR.Config_kD(0,pidVals[9],0);
+	talBLR.ConfigClosedloopRamp(0.5);
+
+	for(double deg = 0; deg < 9000; deg+=90){
+		float x = 0.15 * cos((deg * 3.1415)/180.0);
+		float y = 0.15 * sin((deg * 3.1415)/180.0);
+		std::cout << "Expected mag: 15 Expected deg: " << deg << "\n";
+		drive(x,y);
+		usleep(1000000);
+	}
+	
+
+}
+
 
 int main(int argc, char *argv[]) {
 	/* don't bother prompting, just use can0 */
@@ -356,28 +390,12 @@ int main(int argc, char *argv[]) {
 		sgui.joystickHandler = updater;
 	}
 
+	sigc::slot<void> motorTestSlot = bind(sigc::ptr_fun(runPIDTest),&sgui);
+	sgui.signal_detected.connect(motorTestSlot);
 
-	// talBLR.Set(ControlMode::PercentOutput, 0.1);
-	// ctre::phoenix::unmanaged::FeedEnable(1000);
-	// usleep(2000000);
-	// talBLR.Set(ControlMode::PercentOutput, 0.0);
+	talBLR.ConfigSelectedFeedbackSensor(TalonFXFeedbackDevice::IntegratedSensor,0,10);
+	talBLR.SetSensorPhase(true);
 
-	// talBLR.ConfigSelectedFeedbackSensor(TalonFXFeedbackDevice::IntegratedSensor,0,10);
-	// talBLR.SetSensorPhase(true);
-	// talBLR.Config_kF(0,0.0,0);
-	// talBLR.Config_kP(0,0.1,0);
-	// talBLR.Config_kI(0,0.0,0);
-	// talBLR.Config_kD(0,0.05,0);
-	// talBLR.ConfigClosedloopRamp(0.5);
-
-	// for(double deg = 0; deg < 9000; deg+=90){
-	// 	float x = 0.15 * cos((deg * 3.1415)/180.0);
-	// 	float y = 0.15 * sin((deg * 3.1415)/180.0);
-	// 	std::cout << "Expected mag: 15 Expected deg: " << deg << "\n";
-	// 	drive(x,y);
-	// 	usleep(1000000);
-	// }
-//
 	std::cout << "Gonna run\n";
 	app->run(sgui);
 	SDL_JoystickClose(joy);

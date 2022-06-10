@@ -55,12 +55,26 @@ sguiApp::sguiApp()
 
 }
 
+void sguiApp::getPIDCoefs(double (&toStore)[12]){
+  std::cout<< "Getting pids\n";
+  toStore[0] = frontLeft.P_spin.get_value();
+  toStore[1] = frontLeft.I_spin.get_value();
+  toStore[2] = frontLeft.D_spin.get_value();
+  toStore[3] = frontRight.P_spin.get_value();
+  toStore[4] = frontRight.I_spin.get_value();
+  toStore[5] = frontRight.D_spin.get_value();
+  toStore[6] = backLeft.P_spin.get_value();
+  toStore[7] = backLeft.I_spin.get_value();
+  toStore[8] = backLeft.D_spin.get_value();
+  toStore[9] = backRight.P_spin.get_value();
+  toStore[10] = backRight.I_spin.get_value();
+  toStore[11] = backRight.D_spin.get_value();
+}
+
 void sguiApp::runMotorTest(){
   std::cout << "Run motor test commencing\n";
 
   std::cout << "T/D: " << current_td_radio << "\n";
-
-  
 
   if(frontLeft.Enabled.get_active()){
     std::cout << "Testing Front Left\n";
@@ -77,6 +91,8 @@ void sguiApp::runMotorTest(){
   if(backRight.Enabled.get_active()){
     std::cout << "Testing Back Right\n";
   }
+
+  signal_detected.emit();
 }
 
 //################################################################

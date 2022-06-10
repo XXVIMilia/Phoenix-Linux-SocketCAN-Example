@@ -18,6 +18,7 @@ public:
   void prepCorners();
   void loadPIDVals();
   void runMotorTest();
+  void getPIDCoefs(double (&toStore)[12]);
   
   //For pausing and restarting sigc
   sigc::slot<bool> joystickSlot;
@@ -27,6 +28,8 @@ public:
   sigc::connection motorViewHandler;
 
   std::string pid_config_directory;
+
+  sigc::signal<void()> signal_detected;
 
 
   class ModelColumns : public Gtk::TreeModelColumnRecord{
